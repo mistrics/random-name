@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Random Name template
+
+
+Parameters:
+  Environment:
+    Type: String
+    Default: Dev
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.8
+    MemorySize: 128
+
+    
+Resources:
+
+  RandomNameAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      EndpointConfiguration: REGIONAL
+      Auth:
+        AddDefaultAuthorizerToCorsPreflight: False
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+        AllowOrigin: "'*'"   
+        AllowCredentials: False
+      GatewayResponses:
+        DEFAULT_4xx:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Methods: "'OPTIONS,POST,GET,PUT,DELETE'"
+        DEFAULT_5xx:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Methods: "'OPTIONS,POST,GET,PUT,DELETE'"
+
+  GetRandomName:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: GetRandomName
+      CodeUri: ./
+      Handler: random-name.random_name
+      Events:
+        GetRandomName:
+          Type: Api 
+          Properties:
+            Auth:
+              ApiKeyRequired: True      
+            RestApiId: !Ref RandomNameAPI
+            Path: /name
+            Method: GET
+
+Outputs:
+  RandomNameAPIOutput:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${RandomNameAPI}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+            
